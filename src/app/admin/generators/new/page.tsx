@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { saveGenerator } from "../actions";
-import LocationPicker from "@/components/location-picker";
 
 export default async function NewGeneratorPage() {
   const types = await prisma.generatorType.findMany({ orderBy: { name: "asc" } });
@@ -33,7 +32,10 @@ export default async function NewGeneratorPage() {
               ))}
             </select>
           </div>
-          <LocationPicker latitudeName="latitude" longitudeName="longitude" />
+          <p className="text-xs text-slate-500">
+            Location is shown on the map from the customer this generator is assigned to — assign it after
+            creating.
+          </p>
           <button className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
             Create generator
           </button>

@@ -73,8 +73,6 @@ async function main() {
       id: "seed-generator-1",
       label: "GEN-001",
       generatorTypeId: generatorType.id,
-      latitude: 39.9526,
-      longitude: -75.1652,
     },
   });
 

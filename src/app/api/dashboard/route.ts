@@ -28,13 +28,15 @@ export async function GET() {
   const result = generators.map((g) => {
     const derived = deriveGeneratorStatus(g.generatorType.runtimeMinutes, g.scanEvents);
     const lastEvent = g.scanEvents[0] ?? null;
+    const customer = g.assignments[0]?.customer ?? null;
     return {
       id: g.id,
       label: g.label,
       generatorTypeName: g.generatorType.name,
-      latitude: g.latitude,
-      longitude: g.longitude,
-      customerName: g.assignments[0]?.customer.name ?? null,
+      // Generators have no location of their own — the map shows where the assigned customer is.
+      latitude: customer?.latitude ?? null,
+      longitude: customer?.longitude ?? null,
+      customerName: customer?.name ?? null,
       status: derived.status,
       deadline: derived.deadline ? derived.deadline.toISOString() : null,
       minutesRemaining: derived.minutesRemaining,

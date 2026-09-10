@@ -85,8 +85,6 @@ model Generator {
   qrToken         String   @unique @default(cuid()) // encoded in the printed QR code URL
   label           String // serial number / friendly name
   generatorTypeId String
-  latitude        Float?
-  longitude       Float?
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

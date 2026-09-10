@@ -15,8 +15,6 @@ const generatorSchema = z.object({
   id: z.string().optional(),
   label: z.string().min(1),
   generatorTypeId: z.string().min(1),
-  latitude: z.coerce.number().optional(),
-  longitude: z.coerce.number().optional(),
 });
 
 export async function saveGenerator(formData: FormData) {
@@ -29,8 +27,6 @@ export async function saveGenerator(formData: FormData) {
       data: {
         label: parsed.label,
         generatorTypeId: parsed.generatorTypeId,
-        latitude: parsed.latitude,
-        longitude: parsed.longitude,
       },
     });
     revalidatePath("/admin/generators");
@@ -41,8 +37,6 @@ export async function saveGenerator(formData: FormData) {
     data: {
       label: parsed.label,
       generatorTypeId: parsed.generatorTypeId,
-      latitude: parsed.latitude,
-      longitude: parsed.longitude,
     },
   });
   revalidatePath("/admin/generators");

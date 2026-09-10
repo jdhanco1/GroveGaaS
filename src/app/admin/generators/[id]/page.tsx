@@ -10,7 +10,6 @@ import {
   deleteGenerator,
 } from "../actions";
 import { notFound } from "next/navigation";
-import LocationPicker from "@/components/location-picker";
 
 const STATUS_STYLES: Record<FuelStatus, string> = {
   IDLE: "bg-slate-100 text-slate-600",
@@ -89,12 +88,10 @@ export default async function GeneratorDetailPage({ params }: { params: Promise<
               ))}
             </select>
           </div>
-          <LocationPicker
-            latitudeName="latitude"
-            longitudeName="longitude"
-            defaultLatitude={generator.latitude}
-            defaultLongitude={generator.longitude}
-          />
+          <p className="text-xs text-slate-500">
+            Location shown on the map comes from the assigned customer below — there&apos;s no separate
+            generator location to set.
+          </p>
           <button className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
             Save
           </button>
@@ -119,10 +116,17 @@ export default async function GeneratorDetailPage({ params }: { params: Promise<
         <h2 className="font-medium text-slate-900">Assignment</h2>
         {activeAssignment ? (
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-sm text-slate-700">
-              Currently assigned to <strong>{activeAssignment.customer.name}</strong> since{" "}
-              {activeAssignment.assignedAt.toLocaleDateString()}
-            </p>
+            <div>
+              <p className="text-sm text-slate-700">
+                Currently assigned to <strong>{activeAssignment.customer.name}</strong> since{" "}
+                {activeAssignment.assignedAt.toLocaleDateString()}
+              </p>
+              <p className="text-xs text-slate-500">
+                {activeAssignment.customer.latitude != null && activeAssignment.customer.longitude != null
+                  ? `Map location: ${activeAssignment.customer.latitude.toFixed(5)}, ${activeAssignment.customer.longitude.toFixed(5)} (from customer)`
+                  : "This customer has no map location set yet."}
+              </p>
+            </div>
             <form action={unassignGenerator}>
               <input type="hidden" name="assignmentId" value={activeAssignment.id} />
               <input type="hidden" name="generatorId" value={generator.id} />
