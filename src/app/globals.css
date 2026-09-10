@@ -28,3 +28,18 @@ select {
   background-color: #ffffff;
   color-scheme: light;
 }
+
+/* Used by the map dashboard for generators with less than 10 minutes of run time left. */
+@keyframes marker-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.marker-blink {
+  animation: marker-blink 1s ease-in-out infinite;
+}

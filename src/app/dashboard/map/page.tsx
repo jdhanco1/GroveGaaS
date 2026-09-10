@@ -2,25 +2,36 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Map as MapLibreMap, Marker, NavigationControl, Popup } from "maplibre-gl";
+import { useRouter } from "next/navigation";
+import { Map as MapLibreMap, Marker, NavigationControl } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { DashboardResponse, DashboardStatus } from "@/lib/dashboard-types";
+import type { DashboardResponse } from "@/lib/dashboard-types";
 import { OSM_STYLE, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/map-style";
 
 const POLL_INTERVAL_MS = 20_000;
+const URGENT_THRESHOLD_MINUTES = 10;
 
-const STATUS_COLORS: Record<DashboardStatus, string> = {
-  IDLE: "#94a3b8",
-  RUNNING: "#16a34a",
-  NEEDS_FUEL_SOON: "#d97706",
-  OVERDUE: "#dc2626",
-};
+const COLOR_IDLE = "#94a3b8";
+const COLOR_RUNNING = "#16a34a";
+const COLOR_NEEDS_ATTENTION = "#eab308";
+const COLOR_URGENT = "#dc2626";
+
+/** Green when running, yellow approaching the refuel deadline, gray idle, blinking red under 10 min left. */
+function markerAppearance(status: DashboardResponse["generators"][number]["status"], minutesRemaining: number | null) {
+  if (status === "IDLE") return { color: COLOR_IDLE, blink: false };
+  if (minutesRemaining !== null && minutesRemaining < URGENT_THRESHOLD_MINUTES) {
+    return { color: COLOR_URGENT, blink: true };
+  }
+  if (status === "NEEDS_FUEL_SOON") return { color: COLOR_NEEDS_ATTENTION, blink: false };
+  return { color: COLOR_RUNNING, blink: false };
+}
 
 export default function MapDashboardPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
   const [data, setData] = useState<DashboardResponse | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -61,28 +72,32 @@ export default function MapDashboardPage() {
 
     for (const g of data.generators) {
       if (g.latitude == null || g.longitude == null) continue;
+      const { color, blink } = markerAppearance(g.status, g.minutesRemaining);
+
       const el = document.createElement("div");
-      el.style.width = "18px";
-      el.style.height = "18px";
+      el.title = `${g.label} — ${g.status.replace(/_/g, " ")}${g.customerName ? ` (${g.customerName})` : ""}`;
+      el.className = blink ? "marker-blink" : "";
+      el.style.width = "30px";
+      el.style.height = "30px";
       el.style.borderRadius = "50%";
       el.style.border = "2px solid white";
       el.style.boxShadow = "0 0 0 1px rgba(0,0,0,0.2)";
-      el.style.background = STATUS_COLORS[g.status];
+      el.style.background = color;
+      el.style.cursor = "pointer";
+      el.style.display = "flex";
+      el.style.alignItems = "center";
+      el.style.justifyContent = "center";
+      el.style.fontSize = "14px";
+      el.textContent = "⚡";
       if (g.problemReported) {
         el.style.outline = "3px solid #7c3aed";
       }
+      el.addEventListener("click", () => router.push(`/dashboard/generators/${g.id}`));
 
-      const popupHtml = `<strong>${g.label}</strong><br/>${g.status.replace(/_/g, " ")}${
-        g.customerName ? `<br/>${g.customerName}` : ""
-      }`;
-
-      const marker = new Marker({ element: el })
-        .setLngLat([g.longitude, g.latitude])
-        .setPopup(new Popup({ offset: 12 }).setHTML(popupHtml))
-        .addTo(map);
+      const marker = new Marker({ element: el }).setLngLat([g.longitude, g.latitude]).addTo(map);
       markersRef.current.push(marker);
     }
-  }, [data]);
+  }, [data, router]);
 
   return (
     <div className="relative h-screen w-screen">
@@ -90,6 +105,22 @@ export default function MapDashboardPage() {
         <Link href="/dashboard" className="text-sm text-slate-600 hover:underline">
           ← List view
         </Link>
+      </div>
+      <div className="absolute bottom-4 left-4 z-10 space-y-1 rounded-lg bg-white p-3 text-xs text-slate-600 shadow">
+        <p className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full" style={{ background: COLOR_RUNNING }} /> Running
+        </p>
+        <p className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full" style={{ background: COLOR_NEEDS_ATTENTION }} /> Needs
+          attention
+        </p>
+        <p className="flex items-center gap-2">
+          <span className="inline-block h-3 w-3 rounded-full" style={{ background: COLOR_IDLE }} /> Idle
+        </p>
+        <p className="flex items-center gap-2">
+          <span className="marker-blink inline-block h-3 w-3 rounded-full" style={{ background: COLOR_URGENT }} />{" "}
+          &lt; 10 min of run time left
+        </p>
       </div>
       <div ref={containerRef} className="h-full w-full" />
     </div>
