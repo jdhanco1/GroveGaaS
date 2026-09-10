@@ -1,0 +1,190 @@
+// Prisma schema for the Generator Fuel Tracking system.
+// See plan discussion for rationale on event-sourced status derivation.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ActorType {
+  WORKER
+  CUSTOMER
+}
+
+enum ScanType {
+  REFUEL
+  ISSUE_REPORT
+}
+
+enum MaintenanceCategory {
+  OIL_CHANGE
+  REPAIR
+  INSPECTION
+  OTHER
+}
+
+enum IssueStatus {
+  OPEN
+  RESOLVED
+}
+
+// Admin/office portal users (email+password login via Auth.js credentials provider).
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+
+  resolvedIssues IssueReport[]
+}
+
+model GeneratorType {
+  id                  String   @id @default(cuid())
+  name                String
+  tankCapacityGallons Float
+  runtimeMinutes      Int // expected run time on a full tank
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  generators Generator[]
+}
+
+model MaintenanceTag {
+  id          String              @id @default(cuid())
+  name        String
+  category    MaintenanceCategory
+  description String?
+  createdAt   DateTime            @default(now())
+
+  generatorLinks GeneratorMaintenanceTag[]
+}
+
+// Join table: a maintenance tag attached to a specific generator, with optional due date.
+model GeneratorMaintenanceTag {
+  id               String    @id @default(cuid())
+  generatorId      String
+  maintenanceTagId String
+  dueAt            DateTime?
+  note             String?
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  generator Generator      @relation(fields: [generatorId], references: [id], onDelete: Cascade)
+  tag       MaintenanceTag @relation(fields: [maintenanceTagId], references: [id], onDelete: Cascade)
+
+  @@index([generatorId])
+}
+
+model Generator {
+  id              String   @id @default(cuid())
+  qrToken         String   @unique @default(cuid()) // encoded in the printed QR code URL
+  label           String // serial number / friendly name
+  generatorTypeId String
+  latitude        Float?
+  longitude       Float?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  generatorType   GeneratorType             @relation(fields: [generatorTypeId], references: [id])
+  assignments     Assignment[]
+  scanEvents      ScanEvent[]
+  maintenanceTags GeneratorMaintenanceTag[]
+  issueReports    IssueReport[]
+
+  @@index([generatorTypeId])
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  latitude  Float?
+  longitude Float?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments Assignment[]
+}
+
+model Worker {
+  id        String   @id @default(cuid())
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Centralized PIN store so uniqueness can be enforced globally across workers AND customers
+// (the scan flow uses the PIN alone to determine whether it's a worker or a customer).
+model PinCredential {
+  id        String    @id @default(cuid())
+  pinHash   String    @unique // SHA-256(pin) — see src/lib/pin.ts for the threat-model rationale
+  ownerType ActorType
+  ownerId   String // Worker.id or Customer.id depending on ownerType
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([ownerType, ownerId])
+}
+
+// Which customer currently has which generator (supports history + many-generators-to-one-customer).
+model Assignment {
+  id           String    @id @default(cuid())
+  generatorId  String
+  customerId   String
+  assignedAt   DateTime  @default(now())
+  unassignedAt DateTime?
+
+  generator Generator @relation(fields: [generatorId], references: [id])
+  customer  Customer  @relation(fields: [customerId], references: [id])
+
+  @@index([generatorId, unassignedAt])
+  @@index([customerId, unassignedAt])
+}
+
+// Append-only source of truth. Generator status is always DERIVED from these events,
+// never stored/mutated directly, so late/out-of-order offline syncs reconcile correctly.
+model ScanEvent {
+  id              String    @id @default(cuid())
+  generatorId     String
+  type            ScanType
+  actorType       ActorType
+  actorId         String // Worker.id or Customer.id
+  clientTimestamp DateTime // when the scan actually happened on the device
+  receivedAt      DateTime  @default(now()) // when the server actually persisted it
+  deviceId        String?
+  clientEventId   String    @unique // client-generated id for idempotent de-dup on sync
+  gallonsAdded    Float? // worker-entered actual gallons, if provided
+  note            String? // issue-report free text
+
+  generator   Generator    @relation(fields: [generatorId], references: [id])
+  issueReport IssueReport?
+
+  @@index([generatorId, clientTimestamp])
+}
+
+// Materialized workflow record for a customer-reported issue (admin resolves it).
+model IssueReport {
+  id           String      @id @default(cuid())
+  generatorId  String
+  scanEventId  String      @unique
+  status       IssueStatus @default(OPEN)
+  resolvedAt   DateTime?
+  resolvedById String?
+  note         String?
+  createdAt    DateTime    @default(now())
+
+  generator  Generator  @relation(fields: [generatorId], references: [id])
+  scanEvent  ScanEvent  @relation(fields: [scanEventId], references: [id])
+  resolvedBy AdminUser? @relation(fields: [resolvedById], references: [id])
+
+  @@index([generatorId, status])
+}
