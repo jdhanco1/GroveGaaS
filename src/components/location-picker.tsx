@@ -22,19 +22,20 @@ export default function LocationPicker({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markerRef = useRef<Marker | null>(null);
-  const [position, setPosition] = useState<{ lat: number; lng: number } | null>(
+  // Defaults to the standard map center/pin (rather than "no location") so a brand-new
+  // generator/customer is saved at the expected default spot unless repositioned.
+  const [position, setPosition] = useState<{ lat: number; lng: number }>(
     defaultLatitude != null && defaultLongitude != null
       ? { lat: defaultLatitude, lng: defaultLongitude }
-      : null
+      : { lat: DEFAULT_MAP_CENTER[1], lng: DEFAULT_MAP_CENTER[0] }
   );
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const center: [number, number] = position ? [position.lng, position.lat] : DEFAULT_MAP_CENTER;
     const map = new MapLibreMap({
       container: containerRef.current,
       style: OSM_STYLE,
-      center,
+      center: [position.lng, position.lat],
       zoom: DEFAULT_MAP_ZOOM,
     });
     mapRef.current = map;
@@ -53,7 +54,7 @@ export default function LocationPicker({
       }
     }
 
-    if (position) placeMarker(position.lat, position.lng);
+    placeMarker(position.lat, position.lng);
 
     map.on("click", (e) => {
       setPosition({ lat: e.lngLat.lat, lng: e.lngLat.lng });
@@ -72,12 +73,12 @@ export default function LocationPicker({
     <div>
       <label className="block text-sm font-medium text-slate-700">Location</label>
       <p className="mt-1 text-xs text-slate-500">
-        Click the map to drop a pin, or drag the pin to adjust.{" "}
-        {position ? `${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}` : "No location set"}
+        Click the map to drop a pin, or drag the pin to adjust. {position.lat.toFixed(5)},{" "}
+        {position.lng.toFixed(5)}
       </p>
       <div ref={containerRef} className="mt-1 h-64 w-full rounded border border-slate-300" />
-      <input type="hidden" name={latitudeName} value={position?.lat ?? ""} readOnly />
-      <input type="hidden" name={longitudeName} value={position?.lng ?? ""} readOnly />
+      <input type="hidden" name={latitudeName} value={position.lat} readOnly />
+      <input type="hidden" name={longitudeName} value={position.lng} readOnly />
     </div>
   );
 }
