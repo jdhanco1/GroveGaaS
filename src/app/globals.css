@@ -24,3 +24,11 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Form fields always sit on light card/page backgrounds, so keep their text
+   dark regardless of the OS dark-mode preference above. */
+input,
+textarea,
+select {
+  color: #0f172a;
+}
