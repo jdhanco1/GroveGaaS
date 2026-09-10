@@ -26,6 +26,12 @@ export async function GET(
 
   const derivedStatus = deriveGeneratorStatus(generator.generatorType.runtimeMinutes, refuelEvents);
 
+  const openIssue = await prisma.issueReport.findFirst({
+    where: { generatorId: generator.id, status: "OPEN" },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, note: true, needsHelp: true },
+  });
+
   return NextResponse.json({
     generator: {
       id: generator.id,
@@ -33,6 +39,7 @@ export async function GET(
       qrToken: generator.qrToken,
       generatorTypeName: generator.generatorType.name,
       runtimeMinutes: generator.generatorType.runtimeMinutes,
+      openIssue,
     },
     derivedStatus,
   });

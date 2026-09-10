@@ -172,16 +172,21 @@ model ScanEvent {
   @@index([generatorId, clientTimestamp])
 }
 
-// Materialized workflow record for a customer-reported issue (admin resolves it).
+// Materialized workflow record for a customer- or worker-reported issue.
+// Can be resolved either from the admin portal (resolvedById) or directly in the
+// field by a worker scanning the generator (resolvedByWorkerId).
 model IssueReport {
-  id           String      @id @default(cuid())
-  generatorId  String
-  scanEventId  String      @unique
-  status       IssueStatus @default(OPEN)
-  resolvedAt   DateTime?
-  resolvedById String?
-  note         String?
-  createdAt    DateTime    @default(now())
+  id                 String      @id @default(cuid())
+  generatorId        String
+  scanEventId        String      @unique
+  status             IssueStatus @default(OPEN)
+  needsHelp          Boolean     @default(false) // a worker saw it but couldn't fix it — flagged for admin attention
+  resolvedAt         DateTime?
+  resolvedById       String? // AdminUser.id
+  resolvedByWorkerId String? // Worker.id, when resolved directly in the field
+  note               String? // original reporter's description
+  workerNote         String? // note left by a worker when resolving/escalating in the field
+  createdAt          DateTime    @default(now())
 
   generator  Generator  @relation(fields: [generatorId], references: [id])
   scanEvent  ScanEvent  @relation(fields: [scanEventId], references: [id])

@@ -14,6 +14,7 @@ export interface CachedGenerator {
   generatorTypeName: string;
   runtimeMinutes: number;
   cachedAt: string;
+  openIssue?: { id: string; note: string | null; needsHelp: boolean } | null;
 }
 
 export interface QueuedScanEvent {
@@ -22,9 +23,9 @@ export interface QueuedScanEvent {
   pin: string;
   clientTimestamp: string;
   deviceId: string;
+  eventType?: "REFUEL" | "POWER_ON" | "SHUTDOWN" | "ISSUE_REPORT";
   gallonsAdded?: number;
   note?: string;
-  generatorRunning?: boolean;
   createdAt: string;
   lastError?: string;
 }

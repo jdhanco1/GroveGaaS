@@ -2,55 +2,67 @@ import { getPendingEvents, removePendingEvent, markPendingEventError, type Queue
 
 export interface FlushResult {
   succeeded: string[];
-  failed: string[];
+  failed: { clientEventId: string; error: string }[];
 }
 
 /** Attempts to POST every queued scan event to the server; leaves failures queued for the next attempt. */
 export async function flushPendingScanEvents(): Promise<FlushResult> {
   const pending = await getPendingEvents();
   const succeeded: string[] = [];
-  const failed: string[] = [];
+  const failed: { clientEventId: string; error: string }[] = [];
 
   for (const event of pending) {
-    try {
-      const ok = await submitOne(event);
-      if (ok) {
-        await removePendingEvent(event.clientEventId);
-        succeeded.push(event.clientEventId);
-      } else {
-        failed.push(event.clientEventId);
-      }
-    } catch (err) {
-      await markPendingEventError(event.clientEventId, err instanceof Error ? err.message : "Unknown error");
-      failed.push(event.clientEventId);
+    const result = await submitOne(event);
+    if (result.ok) {
+      await removePendingEvent(event.clientEventId);
+      succeeded.push(event.clientEventId);
+    } else {
+      failed.push({ clientEventId: event.clientEventId, error: result.error });
     }
   }
 
   return { succeeded, failed };
 }
 
-async function submitOne(event: QueuedScanEvent): Promise<boolean> {
-  const response = await fetch("/api/scan-events", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      qrToken: event.qrToken,
-      pin: event.pin,
-      clientTimestamp: event.clientTimestamp,
-      deviceId: event.deviceId,
-      clientEventId: event.clientEventId,
-      gallonsAdded: event.gallonsAdded,
-      note: event.note,
-      generatorRunning: event.generatorRunning,
-    }),
-  });
+async function submitOne(event: QueuedScanEvent): Promise<{ ok: boolean; error: string }> {
+  let response: Response;
+  try {
+    response = await fetch("/api/scan-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        qrToken: event.qrToken,
+        pin: event.pin,
+        clientTimestamp: event.clientTimestamp,
+        deviceId: event.deviceId,
+        clientEventId: event.clientEventId,
+        eventType: event.eventType,
+        gallonsAdded: event.gallonsAdded,
+        note: event.note,
+      }),
+    });
+  } catch (err) {
+    // Network error (not a server rejection) — keep it queued for the next attempt.
+    const message = err instanceof Error ? err.message : "Network error";
+    await markPendingEventError(event.clientEventId, message);
+    return { ok: false, error: message };
+  }
+
+  if (response.ok) {
+    return { ok: true, error: "" };
+  }
+
+  const body = await response.json().catch(() => null);
+  const message =
+    typeof body?.error === "string" ? body.error : `Could not submit (status ${response.status})`;
 
   // 4xx errors (bad PIN, wrong generator) are not transient — drop them rather than retry forever.
   if (response.status >= 400 && response.status < 500) {
-    await markPendingEventError(event.clientEventId, `Rejected: ${response.status}`);
+    await markPendingEventError(event.clientEventId, message);
     await removePendingEvent(event.clientEventId);
-    return false;
+  } else {
+    await markPendingEventError(event.clientEventId, message);
   }
 
-  return response.ok;
+  return { ok: false, error: message };
 }
