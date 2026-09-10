@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Map as MapLibreMap, Marker, NavigationControl, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { DashboardResponse, DashboardStatus } from "@/lib/dashboard-types";
-import { OSM_STYLE, DEFAULT_MAP_CENTER } from "@/lib/map-style";
+import { OSM_STYLE, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/map-style";
 
 const POLL_INTERVAL_MS = 20_000;
 
@@ -28,7 +28,7 @@ export default function MapDashboardPage() {
       container: containerRef.current,
       style: OSM_STYLE,
       center: DEFAULT_MAP_CENTER,
-      zoom: 10,
+      zoom: DEFAULT_MAP_ZOOM,
     });
     mapRef.current.addControl(new NavigationControl());
   }, []);

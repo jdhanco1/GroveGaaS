@@ -16,4 +16,7 @@ export const OSM_STYLE: StyleSpecification = {
 
 // Default map center when no coordinates have been picked yet (business's general operating area).
 // MapLibre uses [lng, lat] order.
-export const DEFAULT_MAP_CENTER: [number, number] = [-89.53507, 34.36534];
+export const DEFAULT_MAP_CENTER: [number, number] = [-89.53298622069512, 34.366088437937144];
+
+// Default zoom level used wherever a map first loads with no specific coordinates picked yet.
+export const DEFAULT_MAP_ZOOM = 14;

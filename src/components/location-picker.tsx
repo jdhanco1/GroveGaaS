@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Map as MapLibreMap, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { OSM_STYLE, DEFAULT_MAP_CENTER } from "@/lib/map-style";
+import { OSM_STYLE, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/map-style";
 
 interface LocationPickerProps {
   latitudeName: string;
@@ -35,7 +35,7 @@ export default function LocationPicker({
       container: containerRef.current,
       style: OSM_STYLE,
       center,
-      zoom: position ? 14 : 9,
+      zoom: DEFAULT_MAP_ZOOM,
     });
     mapRef.current = map;
 
