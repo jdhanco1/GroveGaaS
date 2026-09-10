@@ -250,44 +250,6 @@ export default function ScanPage() {
         </div>
         {generator && <p className="text-sm text-slate-500">{generator.generatorTypeName}</p>}
 
-        {generator?.openIssue && (
-          <div
-            className={`rounded border p-3 text-sm ${
-              generator.openIssue.needsHelp
-                ? "border-purple-300 bg-purple-50 text-purple-900"
-                : "border-red-300 bg-red-50 text-red-900"
-            }`}
-          >
-            <p className="font-medium">
-              {generator.openIssue.needsHelp ? "Reported problem (needs help)" : "Reported problem"}
-            </p>
-            <p className="mt-1">{generator.openIssue.note || "No description provided."}</p>
-            {preview?.ownerType === "WORKER" ? (
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  disabled={issueActionSubmitting}
-                  onClick={() => handleIssueAction("RESOLVED")}
-                  className="rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-                >
-                  Mark resolved
-                </button>
-                <button
-                  type="button"
-                  disabled={issueActionSubmitting}
-                  onClick={() => handleIssueAction("NEEDS_HELP")}
-                  className="rounded border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
-                >
-                  Can&apos;t fix — need help
-                </button>
-              </div>
-            ) : (
-              <p className="mt-2 text-xs opacity-75">Enter a worker PIN below to resolve or escalate this.</p>
-            )}
-            {issueActionMessage && <p className="mt-2 text-xs font-medium">{issueActionMessage}</p>}
-          </div>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-3">
           <div>
             <label htmlFor="pin" className="block text-sm font-medium text-slate-700">
@@ -348,10 +310,48 @@ export default function ScanPage() {
             </div>
           )}
 
+          {eventType === "ISSUE_REPORT" && generator?.openIssue && (
+            <div
+              className={`rounded border p-3 text-sm ${
+                generator.openIssue.needsHelp
+                  ? "border-purple-300 bg-purple-50 text-purple-900"
+                  : "border-red-300 bg-red-50 text-red-900"
+              }`}
+            >
+              <p className="font-medium">
+                {generator.openIssue.needsHelp ? "Current reported problem (needs help)" : "Current reported problem"}
+              </p>
+              <p className="mt-1">{generator.openIssue.note || "No description provided."}</p>
+              {preview?.ownerType === "WORKER" ? (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    disabled={issueActionSubmitting}
+                    onClick={() => handleIssueAction("RESOLVED")}
+                    className="rounded bg-slate-900 px-3 py-2 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    Mark resolved
+                  </button>
+                  <button
+                    type="button"
+                    disabled={issueActionSubmitting}
+                    onClick={() => handleIssueAction("NEEDS_HELP")}
+                    className="rounded border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                  >
+                    Can&apos;t fix — need help
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs opacity-75">Enter your PIN above to resolve or escalate this.</p>
+              )}
+              {issueActionMessage && <p className="mt-2 text-xs font-medium">{issueActionMessage}</p>}
+            </div>
+          )}
+
           {eventType === "ISSUE_REPORT" && (
             <div>
               <label htmlFor="note" className="block text-sm font-medium text-slate-700">
-                Describe the problem
+                {generator?.openIssue ? "Describe another problem (optional)" : "Describe the problem"}
               </label>
               <textarea
                 id="note"

@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { deriveGeneratorStatus, type FuelStatus } from "@/lib/status";
+import AutoRefresh from "@/components/auto-refresh";
+
+export const dynamic = "force-dynamic";
 
 const STATUS_STYLES: Record<FuelStatus, string> = {
   IDLE: "bg-slate-100 text-slate-600",
@@ -53,6 +56,7 @@ export default async function GeneratorHistoryPage({ params }: { params: Promise
 
   return (
     <div className="min-h-screen bg-slate-100 p-6">
+      <AutoRefresh />
       <Link href="/dashboard" className="text-sm text-slate-600 hover:underline">
         ← Dashboard
       </Link>

@@ -8,7 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import type { DashboardResponse } from "@/lib/dashboard-types";
 import { OSM_STYLE, DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM } from "@/lib/map-style";
 
-const POLL_INTERVAL_MS = 20_000;
+const POLL_INTERVAL_MS = 5_000;
 const URGENT_THRESHOLD_MINUTES = 10;
 
 const COLOR_IDLE = "#94a3b8";
@@ -57,9 +57,16 @@ export default function MapDashboardPage() {
     }
     load();
     const interval = setInterval(load, POLL_INTERVAL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", load);
     return () => {
       cancelled = true;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", load);
     };
   }, []);
 

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { DashboardResponse, DashboardGenerator, DashboardStatus } from "@/lib/dashboard-types";
 
-const POLL_INTERVAL_MS = 20_000;
+const POLL_INTERVAL_MS = 5_000;
 
 const STATUS_STYLES: Record<DashboardStatus, string> = {
   IDLE: "bg-slate-100 text-slate-500 border-slate-200",
@@ -83,9 +83,17 @@ export default function DashboardPage() {
     }
     load();
     const interval = setInterval(load, POLL_INTERVAL_MS);
+    // Refresh right away when the kiosk/tab comes back into view rather than waiting a full interval.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", load);
     return () => {
       cancelled = true;
       clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", load);
     };
   }, []);
 
