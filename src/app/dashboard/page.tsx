@@ -145,7 +145,11 @@ export default function DashboardPage() {
         {sortedGenerators.map((g) => {
           const liveSeconds = g.deadline ? (new Date(g.deadline).getTime() - now) / 1000 : null;
           return (
-            <div key={g.id} className={`rounded-lg border-2 p-4 ${STATUS_STYLES[g.status]}`}>
+            <Link
+              key={g.id}
+              href={`/dashboard/generators/${g.id}`}
+              className={`block rounded-lg border-2 p-4 transition hover:shadow-md ${STATUS_STYLES[g.status]}`}
+            >
               <div className="flex items-start justify-between">
                 <p className="font-semibold">{g.label}</p>
                 {g.problemReported && <span title="Problem reported">⚠️</span>}
@@ -165,7 +169,7 @@ export default function DashboardPage() {
                 </p>
               )}
               {g.customerName && <p className="mt-1 text-xs opacity-75">{g.customerName}</p>}
-            </div>
+            </Link>
           );
         })}
         {generators.length === 0 && <p className="col-span-4 text-slate-400">No generators yet.</p>}
