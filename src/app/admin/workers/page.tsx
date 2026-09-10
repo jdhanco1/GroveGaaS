@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { saveWorker, deleteWorker } from "./actions";
+import Link from "next/link";
 
 export default async function WorkersPage({
   searchParams,
@@ -49,9 +50,9 @@ export default async function WorkersPage({
           {editing ? "Save changes" : "Add worker"}
         </button>
         {editing && (
-          <a href="/admin/workers" className="ml-3 text-sm text-slate-500 hover:underline">
+          <Link href="/admin/workers" className="ml-3 text-sm text-slate-500 hover:underline">
             Cancel
-          </a>
+          </Link>
         )}
       </form>
 
@@ -66,12 +67,16 @@ export default async function WorkersPage({
         <tbody>
           {workers.map((w) => (
             <tr key={w.id} className="border-b border-slate-100">
-              <td className="py-2">{w.name}</td>
+              <td className="py-2">
+                <Link href={`/admin/workers/${w.id}`} className="text-slate-700 hover:underline">
+                  {w.name}
+                </Link>
+              </td>
               <td className="py-2">{w.active ? "Yes" : "No"}</td>
               <td className="py-2 space-x-3 text-right">
-                <a href={`/admin/workers?edit=${w.id}`} className="text-slate-600 hover:underline">
+                <Link href={`/admin/workers?edit=${w.id}`} className="text-slate-600 hover:underline">
                   Edit
-                </a>
+                </Link>
                 <form action={deleteWorker} className="inline">
                   <input type="hidden" name="id" value={w.id} />
                   <button className="text-red-600 hover:underline">Delete</button>
