@@ -15,4 +15,5 @@ export const OSM_STYLE: StyleSpecification = {
 };
 
 // Default map center when no coordinates have been picked yet (business's general operating area).
-export const DEFAULT_MAP_CENTER: [number, number] = [-75.1652, 39.9526];
+// MapLibre uses [lng, lat] order.
+export const DEFAULT_MAP_CENTER: [number, number] = [-89.53507, 34.36534];
