@@ -117,4 +117,27 @@ describe("deriveGeneratorStatus", () => {
     expect(result.deadline?.toISOString()).toBe("2026-09-10T14:00:00.000Z");
     expect(result.status).toBe("RUNNING");
   });
+
+  it("goes IDLE with no deadline once the worker's last scan marks the generator off", () => {
+    const now = new Date("2026-09-10T23:00:00Z"); // well past what would otherwise be overdue
+    const result = deriveGeneratorStatus(
+      RUNTIME_MINUTES,
+      [{ clientTimestamp: new Date("2026-09-10T09:00:00Z"), generatorRunning: false }],
+      now
+    );
+    expect(result.status).toBe("IDLE");
+    expect(result.deadline).toBeNull();
+    expect(result.minutesRemaining).toBeNull();
+  });
+
+  it("keeps counting down normally when the last scan is explicitly marked running", () => {
+    const now = new Date("2026-09-10T10:45:00Z");
+    const result = deriveGeneratorStatus(
+      RUNTIME_MINUTES,
+      [{ clientTimestamp: new Date("2026-09-10T09:30:00Z"), generatorRunning: true }],
+      now
+    );
+    expect(result.status).toBe("RUNNING");
+    expect(result.minutesRemaining).toBe(45);
+  });
 });

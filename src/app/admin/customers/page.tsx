@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { saveCustomer, deleteCustomer } from "./actions";
+import { saveCustomer, deleteCustomer, assignGeneratorToCustomer, unassignGeneratorFromCustomer } from "./actions";
+import LocationPicker from "@/components/location-picker";
 
 export default async function CustomersPage({
   searchParams,
@@ -7,12 +8,24 @@ export default async function CustomersPage({
   searchParams: Promise<{ edit?: string; error?: string }>;
 }) {
   const { edit, error } = await searchParams;
-  const [customers, editing] = await Promise.all([
+  const [customers, editing, assignedGenerators, availableGenerators] = await Promise.all([
     prisma.customer.findMany({
       orderBy: { name: "asc" },
       include: { assignments: { where: { unassignedAt: null }, include: { generator: true } } },
     }),
     edit ? prisma.customer.findUnique({ where: { id: edit } }) : null,
+    edit
+      ? prisma.generator.findMany({
+          where: { assignments: { some: { customerId: edit, unassignedAt: null } } },
+          include: { assignments: { where: { customerId: edit, unassignedAt: null } } },
+        })
+      : [],
+    edit
+      ? prisma.generator.findMany({
+          where: { active: true, assignments: { none: { unassignedAt: null } } },
+          orderBy: { label: "asc" },
+        })
+      : [],
   ]);
 
   return (
@@ -66,27 +79,13 @@ export default async function CustomersPage({
               className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Latitude</label>
-            <input
-              name="latitude"
-              type="number"
-              step="any"
-              defaultValue={editing?.latitude ?? ""}
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700">Longitude</label>
-            <input
-              name="longitude"
-              type="number"
-              step="any"
-              defaultValue={editing?.longitude ?? ""}
-              className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
         </div>
+        <LocationPicker
+          latitudeName="latitude"
+          longitudeName="longitude"
+          defaultLatitude={editing?.latitude}
+          defaultLongitude={editing?.longitude}
+        />
         <button className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
           {editing ? "Save changes" : "Add customer"}
         </button>
@@ -96,6 +95,52 @@ export default async function CustomersPage({
           </a>
         )}
       </form>
+
+      {editing && (
+        <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+          <h2 className="font-medium text-slate-900">Assigned generators</h2>
+          {assignedGenerators.length > 0 ? (
+            <ul className="space-y-2 text-sm">
+              {assignedGenerators.map((g) => (
+                <li key={g.id} className="flex items-center justify-between rounded border border-slate-100 px-3 py-2">
+                  <span className="text-slate-700">{g.label}</span>
+                  <form action={unassignGeneratorFromCustomer}>
+                    <input type="hidden" name="assignmentId" value={g.assignments[0].id} />
+                    <input type="hidden" name="customerId" value={editing.id} />
+                    <button className="text-sm text-red-600 hover:underline">Unassign</button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-500">No generators assigned yet.</p>
+          )}
+
+          {availableGenerators.length > 0 && (
+            <form action={assignGeneratorToCustomer} className="flex items-end gap-3">
+              <input type="hidden" name="customerId" value={editing.id} />
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-slate-700">Assign a generator</label>
+                <select
+                  name="generatorId"
+                  required
+                  className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
+                >
+                  <option value="">Select a generator…</option>
+                  {availableGenerators.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
+                Assign
+              </button>
+            </form>
+          )}
+        </section>
+      )}
 
       <table className="w-full text-left text-sm">
         <thead>

@@ -7,7 +7,7 @@ export async function GET() {
     where: { active: true },
     include: {
       generatorType: true,
-      scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true } },
+      scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true, generatorRunning: true } },
       assignments: { where: { unassignedAt: null }, include: { customer: true } },
       issueReports: { where: { status: "OPEN" } },
     },

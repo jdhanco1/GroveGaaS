@@ -10,6 +10,11 @@ export type FuelStatus = "IDLE" | "RUNNING" | "NEEDS_FUEL_SOON" | "OVERDUE";
 export interface RefuelEventInput {
   /** When the scan actually happened on the device (not when the server received it). */
   clientTimestamp: Date;
+  /**
+   * Worker-set toggle for this scan: true/undefined = running, false = explicitly shut off.
+   * Null/undefined (legacy data) is treated as running for backward compatibility.
+   */
+  generatorRunning?: boolean | null;
 }
 
 export interface DerivedGeneratorStatus {
@@ -57,9 +62,23 @@ export function deriveGeneratorStatus(
   }
 
   const lastRefuelAt = todaysEvents[todaysEvents.length - 1].clientTimestamp;
+  const refuelCountToday = todaysEvents.length;
+
+  // Worker explicitly turned it off at the last scan (e.g. end-of-day shutdown) — no
+  // deadline countdown should run overnight against a generator that isn't operating.
+  if (todaysEvents[todaysEvents.length - 1].generatorRunning === false) {
+    return {
+      status: "IDLE",
+      lastRefuelAt,
+      deadline: null,
+      minutesRemaining: null,
+      refuelCountToday,
+      overdueSince: null,
+    };
+  }
+
   const deadline = new Date(lastRefuelAt.getTime() + runtimeMinutes * 60_000);
   const minutesRemaining = (deadline.getTime() - now.getTime()) / 60_000;
-  const refuelCountToday = todaysEvents.length;
 
   if (minutesRemaining > NEEDS_FUEL_SOON_THRESHOLD_MINUTES) {
     return {

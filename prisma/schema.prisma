@@ -164,6 +164,9 @@ model ScanEvent {
   clientEventId   String    @unique // client-generated id for idempotent de-dup on sync
   gallonsAdded    Float? // worker-entered actual gallons, if provided
   note            String? // issue-report free text
+  // Worker-set toggle on REFUEL scans: whether the generator is running or was just
+  // shut off. Null means unknown/legacy data (treated as "running" for back-compat).
+  generatorRunning Boolean?
 
   generator   Generator    @relation(fields: [generatorId], references: [id])
   issueReport IssueReport?

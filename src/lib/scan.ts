@@ -12,6 +12,9 @@ export const scanEventSchema = z.object({
   clientEventId: z.string().min(1),
   gallonsAdded: z.number().positive().optional(),
   note: z.string().max(1000).optional(),
+  // Worker-set toggle: is the generator running or was it just shut off? Ignored for
+  // customer issue-report scans.
+  generatorRunning: z.boolean().optional(),
 });
 
 export type ScanEventInput = z.infer<typeof scanEventSchema>;
@@ -95,6 +98,7 @@ export async function recordScanEvent(input: ScanEventInput): Promise<RecordScan
           clientEventId: input.clientEventId,
           gallonsAdded: input.gallonsAdded,
           note: input.note,
+          generatorRunning: scanType === "REFUEL" ? input.generatorRunning : undefined,
           issueReport:
             scanType === "ISSUE_REPORT"
               ? { create: { generatorId: generator.id, note: input.note } }
@@ -115,7 +119,7 @@ export async function recordScanEvent(input: ScanEventInput): Promise<RecordScan
 
   const refuelEvents = await prisma.scanEvent.findMany({
     where: { generatorId: generator.id, type: "REFUEL" },
-    select: { clientTimestamp: true },
+    select: { clientTimestamp: true, generatorRunning: true },
   });
 
   const derivedStatus = deriveGeneratorStatus(generator.generatorType.runtimeMinutes, refuelEvents);

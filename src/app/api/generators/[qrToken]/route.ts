@@ -21,7 +21,7 @@ export async function GET(
 
   const refuelEvents = await prisma.scanEvent.findMany({
     where: { generatorId: generator.id, type: "REFUEL" },
-    select: { clientTimestamp: true },
+    select: { clientTimestamp: true, generatorRunning: true },
   });
 
   const derivedStatus = deriveGeneratorStatus(generator.generatorType.runtimeMinutes, refuelEvents);

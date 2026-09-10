@@ -34,6 +34,7 @@ export default function ScanPage() {
   const [pin, setPin] = useState("");
   const [preview, setPreview] = useState<Preview>(null);
   const [gallonsAdded, setGallonsAdded] = useState("");
+  const [generatorRunning, setGeneratorRunning] = useState(true);
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
@@ -149,11 +150,13 @@ export default function ScanPage() {
       deviceId: getDeviceId(),
       gallonsAdded: gallonsAdded ? Number(gallonsAdded) : undefined,
       note: note || undefined,
+      generatorRunning: preview?.action === "Refuel" ? generatorRunning : undefined,
       createdAt: new Date().toISOString(),
     });
 
     setPin("");
     setGallonsAdded("");
+    setGeneratorRunning(true);
     setNote("");
     setPreview(null);
 
@@ -227,6 +230,40 @@ export default function ScanPage() {
                 onChange={(e) => setGallonsAdded(e.target.value)}
                 className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
               />
+            </div>
+          )}
+
+          {preview?.action === "Refuel" && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700">Generator status</label>
+              <p className="mt-1 text-xs text-slate-500">
+                Set to “Off” on your last scan of the day so overnight downtime isn’t counted as
+                run time.
+              </p>
+              <div className="mt-1 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGeneratorRunning(true)}
+                  className={`rounded border px-3 py-2 text-sm font-medium ${
+                    generatorRunning
+                      ? "border-green-600 bg-green-50 text-green-700"
+                      : "border-slate-300 text-slate-600"
+                  }`}
+                >
+                  Running
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGeneratorRunning(false)}
+                  className={`rounded border px-3 py-2 text-sm font-medium ${
+                    !generatorRunning
+                      ? "border-slate-600 bg-slate-100 text-slate-900"
+                      : "border-slate-300 text-slate-600"
+                  }`}
+                >
+                  Off
+                </button>
+              </div>
             </div>
           )}
 

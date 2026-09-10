@@ -41,6 +41,7 @@ async function submitOne(event: QueuedScanEvent): Promise<boolean> {
       clientEventId: event.clientEventId,
       gallonsAdded: event.gallonsAdded,
       note: event.note,
+      generatorRunning: event.generatorRunning,
     }),
   });
 

@@ -15,7 +15,7 @@ export default async function GeneratorsPage() {
     include: {
       generatorType: true,
       assignments: { where: { unassignedAt: null }, include: { customer: true } },
-      scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true } },
+      scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true, generatorRunning: true } },
     },
   });
 

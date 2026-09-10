@@ -78,3 +78,26 @@ export async function deleteCustomer(formData: FormData) {
   await prisma.customer.delete({ where: { id } });
   revalidatePath("/admin/customers");
 }
+
+export async function assignGeneratorToCustomer(formData: FormData) {
+  await requireAdmin();
+  const customerId = String(formData.get("customerId"));
+  const generatorId = String(formData.get("generatorId"));
+
+  await prisma.assignment.create({ data: { generatorId, customerId } });
+  revalidatePath("/admin/customers");
+  redirect(`/admin/customers?edit=${customerId}`);
+}
+
+export async function unassignGeneratorFromCustomer(formData: FormData) {
+  await requireAdmin();
+  const assignmentId = String(formData.get("assignmentId"));
+  const customerId = String(formData.get("customerId"));
+
+  await prisma.assignment.update({
+    where: { id: assignmentId },
+    data: { unassignedAt: new Date() },
+  });
+  revalidatePath("/admin/customers");
+  redirect(`/admin/customers?edit=${customerId}`);
+}

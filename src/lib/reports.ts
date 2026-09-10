@@ -9,7 +9,10 @@ export interface DateRange {
 /** Generators currently RUNNING, NEEDS_FUEL_SOON, or OVERDUE (i.e. actively in the field today). */
 export async function countGeneratorsInOperation(): Promise<number> {
   const generators = await prisma.generator.findMany({
-    include: { generatorType: true, scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true } } },
+    include: {
+      generatorType: true,
+      scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true, generatorRunning: true } },
+    },
   });
   return generators.filter((g) => {
     const derived = deriveGeneratorStatus(g.generatorType.runtimeMinutes, g.scanEvents);
@@ -21,6 +24,9 @@ export async function countGeneratorsInOperation(): Promise<number> {
  * Approximates total operating minutes: for each refuel, count the time until the
  * next same-day refuel (or now/deadline for the most recent), capped at the
  * generator type's runtimeMinutes — time beyond that would have been overdue, not running.
+ * A scan explicitly marked "shut off" contributes no runtime after itself — otherwise the
+ * overnight gap between a shutdown scan and the next day's startup scan would be counted
+ * as operating time.
  */
 export async function getTotalRuntimeMinutes(range?: DateRange): Promise<number> {
   const generators = await prisma.generator.findMany({
@@ -31,7 +37,7 @@ export async function getTotalRuntimeMinutes(range?: DateRange): Promise<number>
           type: "REFUEL",
           ...(range ? { clientTimestamp: { gte: range.from, lte: range.to } } : {}),
         },
-        select: { clientTimestamp: true },
+        select: { clientTimestamp: true, generatorRunning: true },
         orderBy: { clientTimestamp: "asc" },
       },
     },
@@ -44,6 +50,7 @@ export async function getTotalRuntimeMinutes(range?: DateRange): Promise<number>
     const runtime = g.generatorType.runtimeMinutes;
     const events = g.scanEvents;
     for (let i = 0; i < events.length; i++) {
+      if (events[i].generatorRunning === false) continue;
       const current = events[i].clientTimestamp;
       const next = events[i + 1]?.clientTimestamp ?? now;
       const gapMinutes = (next.getTime() - current.getTime()) / 60_000;

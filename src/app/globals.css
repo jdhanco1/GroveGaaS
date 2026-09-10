@@ -26,9 +26,11 @@ body {
 }
 
 /* Form fields always sit on light card/page backgrounds, so keep their text
-   dark regardless of the OS dark-mode preference above. */
+   dark and disable browser auto-dark-styling regardless of OS preference. */
 input,
 textarea,
 select {
   color: #0f172a;
+  background-color: #ffffff;
+  color-scheme: light;
 }

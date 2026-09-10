@@ -24,6 +24,7 @@ export interface QueuedScanEvent {
   deviceId: string;
   gallonsAdded?: number;
   note?: string;
+  generatorRunning?: boolean;
   createdAt: string;
   lastError?: string;
 }

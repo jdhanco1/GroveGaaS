@@ -10,6 +10,7 @@ import {
   deleteGenerator,
 } from "../actions";
 import { notFound } from "next/navigation";
+import LocationPicker from "@/components/location-picker";
 
 const STATUS_STYLES: Record<FuelStatus, string> = {
   IDLE: "bg-slate-100 text-slate-600",
@@ -26,7 +27,7 @@ export default async function GeneratorDetailPage({ params }: { params: Promise<
       where: { id },
       include: {
         generatorType: true,
-        scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true } },
+        scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true, generatorRunning: true } },
         assignments: {
           orderBy: { assignedAt: "desc" },
           include: { customer: true },
@@ -88,28 +89,12 @@ export default async function GeneratorDetailPage({ params }: { params: Promise<
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Latitude</label>
-              <input
-                name="latitude"
-                type="number"
-                step="any"
-                defaultValue={generator.latitude ?? ""}
-                className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Longitude</label>
-              <input
-                name="longitude"
-                type="number"
-                step="any"
-                defaultValue={generator.longitude ?? ""}
-                className="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"
-              />
-            </div>
-          </div>
+          <LocationPicker
+            latitudeName="latitude"
+            longitudeName="longitude"
+            defaultLatitude={generator.latitude}
+            defaultLongitude={generator.longitude}
+          />
           <button className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">
             Save
           </button>

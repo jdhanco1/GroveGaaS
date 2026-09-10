@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Map as MapLibreMap, Marker, NavigationControl, Popup } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { DashboardResponse, DashboardStatus } from "@/lib/dashboard-types";
+import { OSM_STYLE, DEFAULT_MAP_CENTER } from "@/lib/map-style";
 
 const POLL_INTERVAL_MS = 20_000;
 
@@ -13,20 +14,6 @@ const STATUS_COLORS: Record<DashboardStatus, string> = {
   RUNNING: "#16a34a",
   NEEDS_FUEL_SOON: "#d97706",
   OVERDUE: "#dc2626",
-};
-
-// Free raster tile source, no API key required.
-const OSM_STYLE = {
-  version: 8 as const,
-  sources: {
-    osm: {
-      type: "raster" as const,
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      attribution: "© OpenStreetMap contributors",
-    },
-  },
-  layers: [{ id: "osm", type: "raster" as const, source: "osm" }],
 };
 
 export default function MapDashboardPage() {
@@ -40,7 +27,7 @@ export default function MapDashboardPage() {
     mapRef.current = new MapLibreMap({
       container: containerRef.current,
       style: OSM_STYLE,
-      center: [-75.1652, 39.9526],
+      center: DEFAULT_MAP_CENTER,
       zoom: 10,
     });
     mapRef.current.addControl(new NavigationControl());
