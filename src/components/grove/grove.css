@@ -1,0 +1,307 @@
+/* GroveGaaS theme: forest actions, amber accents, and high-contrast field surfaces. */
+.grove-theme {
+  --gg-bg: #f5f7f4;
+  --gg-surface: #ffffff;
+  --gg-ink: #172f28;
+  --gg-muted: #52635a;
+  --gg-primary: #174c39;
+  --gg-primary-hover: #103d2d;
+  --gg-accent: #f4b740;
+  --gg-border: #d7dfd8;
+  --gg-input-border: #78867b;
+  --gg-focus: #135bb5;
+  --gg-ok: #17603d;
+  --gg-ok-bg: #e7f3eb;
+  --gg-warn: #754700;
+  --gg-warn-bg: #fff2cf;
+  --gg-danger: #a4262c;
+  --gg-danger-bg: #ffebec;
+  --gg-idle: #475569;
+  --gg-idle-bg: #edf1f5;
+  min-height: 100dvh;
+  color: var(--gg-ink);
+  background: var(--gg-bg);
+  color-scheme: light;
+  font: 400 1rem/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.grove-theme *,
+.grove-theme *::before,
+.grove-theme *::after {
+  box-sizing: border-box;
+}
+
+.grove-theme :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid var(--gg-focus);
+  outline-offset: 3px;
+}
+
+.grove-theme a {
+  text-underline-offset: 3px;
+}
+
+.grove-theme button {
+  cursor: pointer;
+}
+
+.grove-theme button:disabled {
+  cursor: not-allowed;
+}
+
+.gg-brand {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.gg-brand img {
+  display: block;
+  width: auto;
+  height: 38px;
+}
+
+.gg-brand--large img {
+  height: 58px;
+}
+
+.gg-skip {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 100;
+  transform: translateY(-160%);
+  background: white;
+  padding: 12px;
+}
+
+.gg-skip:focus {
+  transform: none;
+}
+
+.gg-shell {
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.gg-sidebar {
+  padding: 26px 18px;
+  border-right: 1px solid var(--gg-border);
+  background: var(--gg-surface);
+}
+
+.gg-sidebar .gg-brand {
+  padding: 0 8px;
+}
+
+.gg-eyebrow {
+  color: var(--gg-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.gg-sidebar .gg-eyebrow {
+  margin: 28px 12px 10px;
+}
+
+.gg-nav {
+  display: grid;
+  gap: 5px;
+}
+
+.gg-nav a {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 9px 13px;
+  border-radius: 8px;
+  color: var(--gg-muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.gg-nav a:hover {
+  color: var(--gg-primary);
+  background: var(--gg-bg);
+}
+
+.gg-content {
+  min-width: 0;
+}
+
+.gg-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 32px;
+  border-bottom: 1px solid var(--gg-border);
+  background: var(--gg-surface);
+}
+
+.gg-main {
+  width: 100%;
+  max-width: 1440px;
+  margin: auto;
+  padding: 32px;
+}
+
+/* Compatibility layer for the current Tailwind-driven screens. */
+.grove-theme .bg-slate-50,
+.grove-theme .bg-slate-100 {
+  background-color: var(--gg-bg);
+}
+
+.grove-theme .bg-white {
+  background-color: var(--gg-surface);
+}
+
+.grove-theme .text-slate-900,
+.grove-theme .text-slate-800 {
+  color: var(--gg-ink);
+}
+
+.grove-theme .text-slate-700,
+.grove-theme .text-slate-600,
+.grove-theme .text-slate-500,
+.grove-theme .text-slate-400 {
+  color: var(--gg-muted);
+}
+
+.grove-theme .border-slate-100,
+.grove-theme .border-slate-200,
+.grove-theme .border-slate-300 {
+  border-color: var(--gg-border);
+}
+
+.grove-theme .bg-slate-900 {
+  background-color: var(--gg-primary);
+}
+
+.grove-theme .hover\:bg-slate-800:hover {
+  background-color: var(--gg-primary-hover);
+}
+
+.grove-theme .hover\:bg-slate-50:hover,
+.grove-theme .hover\:bg-slate-100:hover {
+  background-color: var(--gg-bg);
+}
+
+.grove-theme .bg-emerald-50,
+.grove-theme .bg-emerald-100,
+.grove-theme .bg-green-50,
+.grove-theme .bg-green-100 {
+  background-color: var(--gg-ok-bg);
+}
+
+.grove-theme .text-emerald-600,
+.grove-theme .text-emerald-700,
+.grove-theme .text-green-600,
+.grove-theme .text-green-700,
+.grove-theme .text-green-800 {
+  color: var(--gg-ok);
+}
+
+.grove-theme .bg-amber-50,
+.grove-theme .bg-amber-100 {
+  background-color: var(--gg-warn-bg);
+}
+
+.grove-theme .text-amber-600,
+.grove-theme .text-amber-700,
+.grove-theme .text-amber-800,
+.grove-theme .text-amber-900,
+.grove-theme .text-amber-950 {
+  color: var(--gg-warn);
+}
+
+.grove-theme .bg-purple-50,
+.grove-theme .bg-purple-100,
+.grove-theme .bg-red-50,
+.grove-theme .bg-red-100 {
+  background-color: var(--gg-danger-bg);
+}
+
+.grove-theme .text-purple-600,
+.grove-theme .text-purple-700,
+.grove-theme .text-purple-900,
+.grove-theme .text-red-600,
+.grove-theme .text-red-700,
+.grove-theme .text-red-800,
+.grove-theme .text-red-900 {
+  color: var(--gg-danger);
+}
+
+.grove-theme :where(input, select, textarea) {
+  min-height: 44px;
+  border-color: var(--gg-input-border);
+  border-radius: 7px;
+  background: var(--gg-surface);
+  color: var(--gg-ink);
+}
+
+.grove-theme :where(button, a).rounded,
+.grove-theme :where(button, a).rounded-lg {
+  border-radius: 8px;
+}
+
+@media (max-width: 700px) {
+  .gg-shell {
+    display: block;
+  }
+
+  .gg-sidebar {
+    padding: 14px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--gg-border);
+  }
+
+  .gg-sidebar .gg-brand {
+    padding: 0;
+  }
+
+  .gg-sidebar .gg-eyebrow {
+    display: none;
+  }
+
+  .gg-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    margin-top: 12px;
+  }
+
+  .gg-nav a {
+    flex-shrink: 0;
+  }
+
+  .gg-topbar {
+    padding: 12px 16px;
+  }
+
+  .gg-main {
+    padding: 24px 16px;
+  }
+
+  .gg-brand img {
+    height: 32px;
+  }
+
+  .gg-brand--large img {
+    height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grove-theme *,
+  .grove-theme *::before,
+  .grove-theme *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

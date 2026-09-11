@@ -8,6 +8,7 @@ import type {
   DashboardIssue,
   DashboardStatus,
 } from "@/lib/dashboard-types";
+import GroveBrand from "@/components/grove-brand";
 
 const POLL_INTERVAL_MS = 5_000;
 
@@ -211,7 +212,9 @@ export default function DashboardPage() {
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-3">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-slate-900">Generator Dashboard</h1>
+            <GroveBrand href="/dashboard" priority />
+            <span className="hidden h-6 w-px bg-slate-200 sm:block" />
+            <h1 className="hidden text-sm font-semibold text-slate-700 sm:block">Live fleet</h1>
             <span
               className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
                 isLive ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"

@@ -12,6 +12,7 @@ import {
   type CachedGenerator,
 } from "@/lib/offline-db";
 import { flushPendingScanEvents } from "@/lib/sync-queue";
+import GroveBrand from "@/components/grove-brand";
 
 function getDeviceId(): string {
   const key = "gft-device-id";
@@ -245,6 +246,9 @@ export default function ScanPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-100 px-4 py-8">
       <div className="w-full max-w-sm space-y-4 rounded-lg bg-white p-6 shadow">
+        <div className="flex justify-center border-b border-slate-100 pb-4">
+          <GroveBrand href="/" priority />
+        </div>
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-semibold text-slate-900">{generator?.label ?? "Loading..."}</h1>
           <span
