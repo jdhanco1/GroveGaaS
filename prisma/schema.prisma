@@ -13,11 +13,18 @@ datasource db {
 enum ActorType {
   WORKER
   CUSTOMER
+  ADMIN
 }
 
 enum ScanType {
   REFUEL
   ISSUE_REPORT
+}
+
+enum GeneratorOperation {
+  REFUEL
+  POWER_ON
+  SHUTDOWN
 }
 
 enum MaintenanceCategory {
@@ -41,6 +48,8 @@ model AdminUser {
   createdAt    DateTime @default(now())
 
   resolvedIssues IssueReport[]
+  swapsStarted   GeneratorSwap[] @relation("SwapStartedBy")
+  swapsRestored  GeneratorSwap[] @relation("SwapRestoredBy")
 }
 
 model GeneratorType {
@@ -94,6 +103,8 @@ model Generator {
   scanEvents      ScanEvent[]
   maintenanceTags GeneratorMaintenanceTag[]
   issueReports    IssueReport[]
+  swapsAsOriginal    GeneratorSwap[] @relation("OriginalGenerator")
+  swapsAsReplacement GeneratorSwap[] @relation("ReplacementGenerator")
 
   @@index([generatorTypeId])
 }
@@ -110,6 +121,7 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   assignments Assignment[]
+  generatorSwaps GeneratorSwap[]
 }
 
 model Worker {
@@ -143,6 +155,8 @@ model Assignment {
 
   generator Generator @relation(fields: [generatorId], references: [id])
   customer  Customer  @relation(fields: [customerId], references: [id])
+  originalSwap    GeneratorSwap? @relation("OriginalAssignment")
+  replacementSwap GeneratorSwap? @relation("ReplacementAssignment")
 
   @@index([generatorId, unassignedAt])
   @@index([customerId, unassignedAt])
@@ -165,11 +179,40 @@ model ScanEvent {
   // Worker-set toggle on REFUEL scans: whether the generator is running or was just
   // shut off. Null means unknown/legacy data (treated as "running" for back-compat).
   generatorRunning Boolean?
+  operation        GeneratorOperation?
 
   generator   Generator    @relation(fields: [generatorId], references: [id])
   issueReport IssueReport?
 
   @@index([generatorId, clientTimestamp])
+}
+
+// Audit record for a temporary replacement. Assignment rows remain the source
+// of truth for who had each generator at any point in time.
+model GeneratorSwap {
+  id                      String    @id @default(cuid())
+  customerId              String
+  originalGeneratorId     String
+  replacementGeneratorId  String
+  originalAssignmentId    String    @unique
+  replacementAssignmentId String    @unique
+  startedById             String
+  restoredById            String?
+  reason                  String?
+  startedAt               DateTime  @default(now())
+  restoredAt              DateTime?
+
+  customer             Customer   @relation(fields: [customerId], references: [id])
+  originalGenerator     Generator  @relation("OriginalGenerator", fields: [originalGeneratorId], references: [id])
+  replacementGenerator  Generator  @relation("ReplacementGenerator", fields: [replacementGeneratorId], references: [id])
+  originalAssignment    Assignment @relation("OriginalAssignment", fields: [originalAssignmentId], references: [id])
+  replacementAssignment Assignment @relation("ReplacementAssignment", fields: [replacementAssignmentId], references: [id])
+  startedBy            AdminUser  @relation("SwapStartedBy", fields: [startedById], references: [id])
+  restoredBy           AdminUser? @relation("SwapRestoredBy", fields: [restoredById], references: [id])
+
+  @@index([originalGeneratorId, restoredAt])
+  @@index([replacementGeneratorId, restoredAt])
+  @@index([customerId, restoredAt])
 }
 
 // Materialized workflow record for a customer- or worker-reported issue.

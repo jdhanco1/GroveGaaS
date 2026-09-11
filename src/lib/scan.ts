@@ -41,7 +41,7 @@ export async function resolveActorFromPin(pin: string): Promise<ResolvedActor> {
   const credential = await prisma.pinCredential.findUnique({
     where: { pinHash: hashPin(pin) },
   });
-  if (!credential) {
+  if (!credential || credential.ownerType === "ADMIN") {
     throw new ScanError("PIN not recognized", 401);
   }
   return { actorType: credential.ownerType, actorId: credential.ownerId };
@@ -90,6 +90,7 @@ export async function recordScanEvent(input: ScanEventInput): Promise<RecordScan
 
   const scanType: ScanType = eventType === "ISSUE_REPORT" ? "ISSUE_REPORT" : "REFUEL";
   const generatorRunning = eventType === "SHUTDOWN" ? false : eventType === "ISSUE_REPORT" ? undefined : true;
+  const operation = eventType === "ISSUE_REPORT" ? undefined : eventType;
 
   const existing = await prisma.scanEvent.findUnique({
     where: { clientEventId: input.clientEventId },
@@ -112,6 +113,7 @@ export async function recordScanEvent(input: ScanEventInput): Promise<RecordScan
           gallonsAdded: input.gallonsAdded,
           note: input.note,
           generatorRunning,
+          operation,
           issueReport:
             scanType === "ISSUE_REPORT"
               ? { create: { generatorId: generator.id, note: input.note } }

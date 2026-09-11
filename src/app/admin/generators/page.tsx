@@ -16,6 +16,10 @@ export default async function GeneratorsPage() {
       generatorType: true,
       assignments: { where: { unassignedAt: null }, include: { customer: true } },
       scanEvents: { where: { type: "REFUEL" }, select: { clientTimestamp: true, generatorRunning: true } },
+      swapsAsReplacement: {
+        where: { restoredAt: null },
+        include: { originalGenerator: true },
+      },
     },
   });
 
@@ -56,7 +60,14 @@ export default async function GeneratorsPage() {
                     {derived.status.replace(/_/g, " ")}
                   </span>
                 </td>
-                <td className="py-2">{g.assignments[0]?.customer.name ?? "—"}</td>
+                <td className="py-2">
+                  {g.assignments[0]?.customer.name ?? "—"}
+                  {g.swapsAsReplacement[0] && (
+                    <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                      Replacing {g.swapsAsReplacement[0].originalGenerator.label}
+                    </span>
+                  )}
+                </td>
                 <td className="py-2 text-right">
                   <Link href={`/admin/generators/${g.id}`} className="text-slate-600 hover:underline">
                     Manage

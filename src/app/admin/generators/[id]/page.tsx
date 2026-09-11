@@ -10,6 +10,7 @@ import {
   deleteGenerator,
 } from "../actions";
 import { notFound } from "next/navigation";
+import AdminGeneratorOperations from "@/components/admin-generator-operations";
 
 const STATUS_STYLES: Record<FuelStatus, string> = {
   IDLE: "bg-slate-100 text-slate-600",
@@ -21,7 +22,7 @@ const STATUS_STYLES: Record<FuelStatus, string> = {
 export default async function GeneratorDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
-  const [generator, types, customers, tags] = await Promise.all([
+  const [generator, types, customers, tags, replacements, activeSwap] = await Promise.all([
     prisma.generator.findUnique({
       where: { id },
       include: {
@@ -37,6 +38,24 @@ export default async function GeneratorDetailPage({ params }: { params: Promise<
     prisma.generatorType.findMany({ orderBy: { name: "asc" } }),
     prisma.customer.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.maintenanceTag.findMany({ orderBy: { name: "asc" } }),
+    prisma.generator.findMany({
+      where: {
+        id: { not: id },
+        active: true,
+        assignments: { none: { unassignedAt: null } },
+        swapsAsOriginal: { none: { restoredAt: null } },
+        swapsAsReplacement: { none: { restoredAt: null } },
+      },
+      include: { generatorType: true },
+      orderBy: { label: "asc" },
+    }),
+    prisma.generatorSwap.findFirst({
+      where: {
+        restoredAt: null,
+        OR: [{ originalGeneratorId: id }, { replacementGeneratorId: id }],
+      },
+      include: { customer: true, originalGenerator: true, replacementGenerator: true },
+    }),
   ]);
 
   if (!generator) notFound();
@@ -60,6 +79,31 @@ export default async function GeneratorDetailPage({ params }: { params: Promise<
           <button className="text-sm text-red-600 hover:underline">Delete generator</button>
         </form>
       </div>
+
+      <AdminGeneratorOperations
+        generatorId={generator.id}
+        status={derived.status}
+        activeAssignment={
+          activeAssignment ? { id: activeAssignment.id, customerName: activeAssignment.customer.name } : null
+        }
+        replacements={replacements.map((replacement) => ({
+          id: replacement.id,
+          label: replacement.label,
+          typeName: replacement.generatorType.name,
+        }))}
+        activeSwap={
+          activeSwap
+            ? {
+                id: activeSwap.id,
+                customerName: activeSwap.customer.name,
+                originalLabel: activeSwap.originalGenerator.label,
+                replacementLabel: activeSwap.replacementGenerator.label,
+                reason: activeSwap.reason,
+                startedAt: activeSwap.startedAt.toISOString(),
+              }
+            : null
+        }
+      />
 
       <section className="grid grid-cols-2 gap-8">
         <form action={saveGenerator} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
@@ -133,6 +177,8 @@ export default async function GeneratorDetailPage({ params }: { params: Promise<
               <button className="text-sm text-red-600 hover:underline">Unassign</button>
             </form>
           </div>
+        ) : activeSwap ? (
+          <p className="mt-2 text-sm text-slate-500">This generator is reserved by the temporary replacement shown above.</p>
         ) : (
           <form action={assignGenerator} className="mt-2 flex items-end gap-3">
             <input type="hidden" name="generatorId" value={generator.id} />

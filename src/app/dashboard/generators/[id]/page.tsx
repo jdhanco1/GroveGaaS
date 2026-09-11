@@ -42,16 +42,21 @@ export default async function GeneratorHistoryPage({ params }: { params: Promise
 
   const workerIds = new Set<string>();
   const customerIds = new Set<string>();
+  const adminIds = new Set<string>();
   for (const e of generator.scanEvents) {
-    (e.actorType === "WORKER" ? workerIds : customerIds).add(e.actorId);
+    if (e.actorType === "WORKER") workerIds.add(e.actorId);
+    else if (e.actorType === "CUSTOMER") customerIds.add(e.actorId);
+    else adminIds.add(e.actorId);
   }
-  const [workers, customers] = await Promise.all([
+  const [workers, customers, admins] = await Promise.all([
     prisma.worker.findMany({ where: { id: { in: [...workerIds] } } }),
     prisma.customer.findMany({ where: { id: { in: [...customerIds] } } }),
+    prisma.adminUser.findMany({ where: { id: { in: [...adminIds] } } }),
   ]);
   const nameById = new Map<string, string>([
     ...workers.map((w) => [w.id, w.name] as const),
     ...customers.map((c) => [c.id, c.name] as const),
+    ...admins.map((admin) => [admin.id, admin.name] as const),
   ]);
 
   return (
@@ -103,12 +108,18 @@ export default async function GeneratorHistoryPage({ params }: { params: Promise
               <li key={e.id} className="py-2">
                 <div className="flex items-center justify-between">
                   <span className="font-medium text-slate-700">
-                    {e.type === "REFUEL" ? "Refuel" : "Issue reported"}
+                    {e.type === "ISSUE_REPORT"
+                      ? "Issue reported"
+                      : e.operation === "POWER_ON"
+                        ? "Powered on"
+                        : e.operation === "SHUTDOWN" || e.generatorRunning === false
+                          ? "Shut down"
+                          : "Refueled"}
                   </span>
                   <span className="text-xs text-slate-400">{e.clientTimestamp.toLocaleString()}</span>
                 </div>
                 <p className="text-xs text-slate-500">
-                  By {nameById.get(e.actorId) ?? "Unknown"}
+                  By {nameById.get(e.actorId) ?? "Unknown"}{e.actorType === "ADMIN" ? " (admin)" : ""}
                   {e.type === "REFUEL" && e.gallonsAdded != null ? ` — ${e.gallonsAdded} gal added` : ""}
                   {e.type === "REFUEL" && e.generatorRunning === false ? " — generator turned off" : ""}
                 </p>

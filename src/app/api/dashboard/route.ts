@@ -11,7 +11,7 @@ export async function GET() {
       generatorType: true,
       scanEvents: {
         where: { type: "REFUEL" },
-        select: { clientTimestamp: true, generatorRunning: true, actorId: true },
+        select: { clientTimestamp: true, generatorRunning: true, actorType: true, actorId: true },
         orderBy: { clientTimestamp: "desc" },
       },
       assignments: { where: { unassignedAt: null }, include: { customer: true } },
@@ -23,22 +23,32 @@ export async function GET() {
     },
   });
 
-  // Collect every worker/customer id we need a display name for in one pass.
+  // Collect every actor id we need a display name for in one pass.
   const workerIds = new Set<string>();
   const customerIds = new Set<string>();
+  const adminIds = new Set<string>();
+  const collectActor = (actorType: "WORKER" | "CUSTOMER" | "ADMIN", actorId: string) => {
+    if (actorType === "WORKER") workerIds.add(actorId);
+    else if (actorType === "CUSTOMER") customerIds.add(actorId);
+    else adminIds.add(actorId);
+  };
   for (const g of generators) {
     const last = g.scanEvents[0];
-    if (last) workerIds.add(last.actorId);
+    if (last) collectActor(last.actorType, last.actorId);
     for (const issue of g.issueReports) {
-      (issue.scanEvent.actorType === "WORKER" ? workerIds : customerIds).add(issue.scanEvent.actorId);
+      collectActor(issue.scanEvent.actorType, issue.scanEvent.actorId);
     }
   }
-  const [workers, customers] = await Promise.all([
+  const [workers, customers, admins] = await Promise.all([
     prisma.worker.findMany({ where: { id: { in: [...workerIds] } }, select: { id: true, name: true } }),
     prisma.customer.findMany({ where: { id: { in: [...customerIds] } }, select: { id: true, name: true } }),
+    prisma.adminUser.findMany({ where: { id: { in: [...adminIds] } }, select: { id: true, name: true } }),
   ]);
-  const workerNameById = new Map(workers.map((w) => [w.id, w.name]));
-  const customerNameById = new Map(customers.map((c) => [c.id, c.name]));
+  const actorNameById = new Map([
+    ...workers.map((worker) => [worker.id, worker.name] as const),
+    ...customers.map((customer) => [customer.id, customer.name] as const),
+    ...admins.map((admin) => [admin.id, admin.name] as const),
+  ]);
 
   const result = generators.map((g) => {
     const derived = deriveGeneratorStatus(g.generatorType.runtimeMinutes, g.scanEvents);
@@ -58,16 +68,13 @@ export async function GET() {
       minutesRemaining: derived.minutesRemaining,
       refuelCountToday: derived.refuelCountToday,
       lastRefuelAt: lastEvent ? lastEvent.clientTimestamp.toISOString() : null,
-      lastRefuelByName: lastEvent ? (workerNameById.get(lastEvent.actorId) ?? null) : null,
+      lastRefuelByName: lastEvent ? (actorNameById.get(lastEvent.actorId) ?? null) : null,
       problemReported: g.issueReports.length > 0,
       openIssues: g.issueReports.map((issue) => ({
         id: issue.id,
         note: issue.note,
         reportedByType: issue.scanEvent.actorType,
-        reportedByName:
-          issue.scanEvent.actorType === "WORKER"
-            ? (workerNameById.get(issue.scanEvent.actorId) ?? null)
-            : (customerNameById.get(issue.scanEvent.actorId) ?? null),
+        reportedByName: actorNameById.get(issue.scanEvent.actorId) ?? null,
         reportedAt: issue.scanEvent.clientTimestamp.toISOString(),
         needsHelp: issue.needsHelp,
         workerNote: issue.workerNote,

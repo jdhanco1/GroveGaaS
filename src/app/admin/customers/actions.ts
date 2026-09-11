@@ -84,7 +84,24 @@ export async function assignGeneratorToCustomer(formData: FormData) {
   const customerId = String(formData.get("customerId"));
   const generatorId = String(formData.get("generatorId"));
 
-  await prisma.assignment.create({ data: { generatorId, customerId } });
+  await prisma.$transaction(
+    async (tx) => {
+      const [generator, activeAssignment, activeSwap] = await Promise.all([
+        tx.generator.findUnique({ where: { id: generatorId }, select: { active: true } }),
+        tx.assignment.findFirst({ where: { generatorId, unassignedAt: null } }),
+        tx.generatorSwap.findFirst({
+          where: {
+            restoredAt: null,
+            OR: [{ originalGeneratorId: generatorId }, { replacementGeneratorId: generatorId }],
+          },
+        }),
+      ]);
+      if (!generator?.active) throw new Error("Only active generators can be assigned.");
+      if (activeAssignment || activeSwap) throw new Error("This generator is not available for assignment.");
+      await tx.assignment.create({ data: { generatorId, customerId } });
+    },
+    { isolationLevel: "Serializable" }
+  );
   revalidatePath("/admin/customers");
   redirect(`/admin/customers?edit=${customerId}`);
 }
@@ -94,8 +111,12 @@ export async function unassignGeneratorFromCustomer(formData: FormData) {
   const assignmentId = String(formData.get("assignmentId"));
   const customerId = String(formData.get("customerId"));
 
-  await prisma.assignment.update({
-    where: { id: assignmentId },
+  const activeSwap = await prisma.generatorSwap.findFirst({
+    where: { replacementAssignmentId: assignmentId, restoredAt: null },
+  });
+  if (activeSwap) throw new Error("Restore the original generator to end this temporary replacement.");
+  await prisma.assignment.updateMany({
+    where: { id: assignmentId, customerId, unassignedAt: null },
     data: { unassignedAt: new Date() },
   });
   revalidatePath("/admin/customers");

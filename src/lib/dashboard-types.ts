@@ -3,9 +3,9 @@ export type DashboardStatus = "IDLE" | "RUNNING" | "NEEDS_FUEL_SOON" | "OVERDUE"
 export interface DashboardIssue {
   id: string;
   note: string | null;
-  /** Who reported it (customer or worker name), or null if unknown. */
+  /** Who reported it, or null if unknown. */
   reportedByName: string | null;
-  reportedByType: "WORKER" | "CUSTOMER";
+  reportedByType: "WORKER" | "CUSTOMER" | "ADMIN";
   /** ISO timestamp of when the issue was reported. */
   reportedAt: string;
   /** A worker looked at it in the field but couldn't fix it. */
@@ -29,7 +29,7 @@ export interface DashboardGenerator {
   refuelCountToday: number;
   /** ISO timestamp of the most recent refuel ever recorded (any day), or null. */
   lastRefuelAt: string | null;
-  /** Name of the worker who performed the most recent refuel, or null. */
+  /** Name of the worker or admin who performed the most recent operation, or null. */
   lastRefuelByName: string | null;
   problemReported: boolean;
   openIssues: DashboardIssue[];

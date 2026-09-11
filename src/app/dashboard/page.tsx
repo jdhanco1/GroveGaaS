@@ -204,7 +204,7 @@ export default function DashboardPage() {
   }, [generators]);
 
   const toggleFilter = (next: Filter) => setFilter((cur) => (cur === next ? "ALL" : next));
-  const secondsSinceFetch = data ? Math.round((now - new Date(data.fetchedAt).getTime()) / 1000) : null;
+  const isLive = data ? now - new Date(data.fetchedAt).getTime() <= POLL_INTERVAL_MS * 2 : false;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -212,15 +212,24 @@ export default function DashboardPage() {
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-3">
           <div className="flex items-center gap-3">
             <h1 className="text-lg font-semibold text-slate-900">Generator Dashboard</h1>
-            <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+            <span
+              className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${
+                isLive ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+              }`}
+            >
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                <span
+                  className={`absolute inline-flex h-full w-full animate-ping rounded-full ${
+                    isLive ? "bg-emerald-400 opacity-75" : "bg-amber-400 opacity-75"
+                  }`}
+                />
+                <span
+                  className={`relative inline-flex h-2 w-2 rounded-full ${
+                    isLive ? "bg-emerald-500" : "bg-amber-500"
+                  }`}
+                />
               </span>
-              Live
-              {secondsSinceFetch !== null && (
-                <span className="text-emerald-600/70">· {secondsSinceFetch}s ago</span>
-              )}
+              {isLive ? "Live" : "Offline"}
             </span>
           </div>
           <div className="flex items-center gap-3">

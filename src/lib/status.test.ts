@@ -140,4 +140,34 @@ describe("deriveGeneratorStatus", () => {
     expect(result.status).toBe("RUNNING");
     expect(result.minutesRemaining).toBe(45);
   });
+
+  it("uses the latest admin-style operation to shut down a running generator", () => {
+    const now = new Date("2026-09-10T10:30:00Z");
+    const result = deriveGeneratorStatus(
+      RUNTIME_MINUTES,
+      [
+        { clientTimestamp: new Date("2026-09-10T09:00:00Z"), generatorRunning: true },
+        { clientTimestamp: new Date("2026-09-10T10:00:00Z"), generatorRunning: false },
+      ],
+      now
+    );
+
+    expect(result.status).toBe("IDLE");
+    expect(result.deadline).toBeNull();
+  });
+
+  it("starts a fresh countdown when a refuel follows a shutdown", () => {
+    const now = new Date("2026-09-10T11:30:00Z");
+    const result = deriveGeneratorStatus(
+      RUNTIME_MINUTES,
+      [
+        { clientTimestamp: new Date("2026-09-10T09:00:00Z"), generatorRunning: false },
+        { clientTimestamp: new Date("2026-09-10T11:00:00Z"), generatorRunning: true },
+      ],
+      now
+    );
+
+    expect(result.status).toBe("RUNNING");
+    expect(result.deadline?.toISOString()).toBe("2026-09-10T13:00:00.000Z");
+  });
 });

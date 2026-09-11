@@ -22,7 +22,12 @@ export default async function CustomersPage({
       : [],
     edit
       ? prisma.generator.findMany({
-          where: { active: true, assignments: { none: { unassignedAt: null } } },
+          where: {
+            active: true,
+            assignments: { none: { unassignedAt: null } },
+            swapsAsOriginal: { none: { restoredAt: null } },
+            swapsAsReplacement: { none: { restoredAt: null } },
+          },
           orderBy: { label: "asc" },
         })
       : [],
